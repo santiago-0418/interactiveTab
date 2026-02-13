@@ -79,22 +79,27 @@ function getSuggestedThirds(selectedNotes, tuning) {
   return suggestions;
 }
 
+
 function Fretboard({ selected, onToggle, tuning, scaleNotes, showScale, hoverSuggestion }) {
   const width = FRETS * FRET_WIDTH;
   const height = (STRINGS - 1) * STRING_HEIGHT + 2 * PADDING;
-  const FRET_MARKERS = [5, 7, 9];
+  const FRET_MARKERS = [3, 5, 7, 9, 12]; // common markers
+  const FRETBOARD_LEFT = 60; // left edge of fretboard rectangle
+  const OPEN_X = FRETBOARD_LEFT - 30; // open notes outside
 
   return (
-    <svg width={width + 60} height={height} style={{ border: "1px solid black" }}>
+    <svg width={width + FRETBOARD_LEFT + 40} height={height} style={{ border: "1px solid black" }}>
+      
       {/* Frets */}
       {Array.from({ length: FRETS + 1 }).map((_, f) => (
         <line
           key={f}
-          x1={f * FRET_WIDTH + 40}
+          x1={f * FRET_WIDTH + FRETBOARD_LEFT}
           y1={PADDING}
-          x2={f * FRET_WIDTH + 40}
+          x2={f * FRET_WIDTH + FRETBOARD_LEFT}
           y2={height - PADDING}
           stroke="black"
+          strokeWidth={f === 0 ? 4 : 1} // nut is thicker
         />
       ))}
 
@@ -104,29 +109,31 @@ function Fretboard({ selected, onToggle, tuning, scaleNotes, showScale, hoverSug
         return (
           <line
             key={s}
-            x1={40}
+            x1={FRETBOARD_LEFT}
             y1={PADDING + flipped * STRING_HEIGHT}
-            x2={width + 40}
+            x2={width + FRETBOARD_LEFT}
             y2={PADDING + flipped * STRING_HEIGHT}
             stroke="black"
           />
         );
       })}
 
-      {/* Open strings */}
+      {/* Open strings (outside fretboard) */}
+      {/* Open strings (0th fret) */}
       {Array.from({ length: STRINGS }).map((_, s) => {
         const flipped = STRINGS - 1 - s;
         const cy = PADDING + flipped * STRING_HEIGHT;
         const note = getNoteName(tuning, s, 0);
         const highlight = hoverSuggestion && hoverSuggestion.note === note;
+        const isSelected = selected[s][0];
 
         return (
           <circle
             key={`open-${s}`}
-            cx={40} // left border
+            cx={OPEN_X}
             cy={cy}
             r={10}
-            fill={highlight ? "rgba(255,0,0,0.5)" : "lightblue"}
+            fill={isSelected ? "orange" : highlight ? "rgba(255,0,0,0.5)" : "lightblue"}
             stroke="black"
             onClick={() => onToggle(s, 0)}
             style={{ cursor: "pointer" }}
@@ -134,14 +141,16 @@ function Fretboard({ selected, onToggle, tuning, scaleNotes, showScale, hoverSug
         );
       })}
 
+
       {/* Frets 1..FRETS */}
       {Array.from({ length: STRINGS }).map((_, s) =>
         Array.from({ length: FRETS }, (_, f) => {
           const flipped = STRINGS - 1 - s;
-          const cx = f * FRET_WIDTH + FRET_WIDTH / 2 + 40;
+          const cx = f * FRET_WIDTH + FRET_WIDTH / 2 + FRETBOARD_LEFT;
           const cy = PADDING + flipped * STRING_HEIGHT;
-          const note = getNoteName(tuning, s, f);
-          const isSelected = selected[s][f];
+          const fretNumber = f + 1; // 1..FRETS
+          const note = getNoteName(tuning, s, fretNumber);
+          const isSelected = selected[s][fretNumber];
 
           let fillColor = "lightblue";
           if (isSelected) fillColor = "orange";
@@ -150,35 +159,47 @@ function Fretboard({ selected, onToggle, tuning, scaleNotes, showScale, hoverSug
 
           return (
             <circle
-              key={`${s}-${f}`}
+              key={`${s}-${fretNumber}`}
               cx={cx}
               cy={cy}
               r={10}
               fill={fillColor}
               stroke="black"
-              onClick={() => onToggle(s, f)}
+              onClick={() => onToggle(s, fretNumber)}
               style={{ cursor: "pointer" }}
             />
           );
         })
       )}
 
+
       {/* Fret markers */}
       {FRET_MARKERS.map(f => (
-        <circle key={`marker-${f}`} cx={f * FRET_WIDTH + 40} cy={height / 2} r={5} fill="black" />
+        <circle
+          key={`marker-${f}`}
+          cx={f * FRET_WIDTH + FRETBOARD_LEFT}
+          cy={height / 2}
+          r={5}
+          fill="black"
+        />
       ))}
     </svg>
   );
 }
+
 
 export default function App() {
   const [AISuggestions, setAISuggestions] = useState(null);
   const [tuningName, setTuningName] = useState("Standard (EADGBE)");
   const tuning = TUNINGS[tuningName];
 
+  //sets the default state to have open strings ringing
   const [selected, setSelected] = useState(
-    Array.from({ length: STRINGS }, () => Array.from({ length: FRETS }, () => false))
-  );
+  Array.from({ length: STRINGS }, () =>
+    Array.from({ length: FRETS + 1 }, (_, f) => f === 0) // only fret 0 is true
+  )
+);
+
 
   const [keyRoot, setKeyRoot] = useState("C");
   const [scaleType, setScaleType] = useState("Major");
@@ -190,10 +211,25 @@ export default function App() {
   const scaleNotes = getScaleNotes(keyRoot, scaleType);
 
   function toggleNote(string, fret) {
-    const copy = selected.map(row => [...row]);
-    copy[string][fret] = !copy[string][fret];
-    setSelected(copy);
-  }
+  setSelected(prev => {
+    const copy = prev.map(row => [...row]);
+    // If the clicked fret is already selected, deselect it
+    if (copy[string][fret]) {
+      copy[string][fret] = false;
+    } else {
+      // Deselect all other frets on this string
+      for (let f = 0; f <= FRETS; f++) {
+        copy[string][f] = false;
+      }
+      // Select the clicked fret
+      copy[string][fret] = true;
+    }
+    return copy;
+  });
+}
+
+
+
 
   function clearAll() {
     setSelected(Array.from({ length: STRINGS }, () => Array.from({ length: FRETS }, () => false)));
@@ -201,13 +237,14 @@ export default function App() {
 
   // Collect selected notes
   const selectedNotes = [];
-  for (let s = 0; s < STRINGS; s++) {
-    for (let f = 0; f <= FRETS; f++) {
-      if ((f === 0 && selected[s][0]) || (f > 0 && selected[s][f - 1])) {
-        selectedNotes.push({ string: s, fret: f, note: getNoteName(tuning, s, f) });
-      }
+for (let s = 0; s < STRINGS; s++) {
+  for (let f = 0; f <= FRETS; f++) {
+    if (selected[s][f]) {
+      selectedNotes.push({ string: s, fret: f, note: getNoteName(tuning, s, f) });
     }
   }
+}
+
 
   async function getAISuggestions() {
   setLoading(true); // start loading
