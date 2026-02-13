@@ -1,8 +1,8 @@
-## 🎸 TabApp The Guitar Chord Builder & AI Learning App
+# 🎸 TabApp The Guitar Chord Builder & AI Learning App
 
 Welcome to the Guitar Chord Builder, an interactive web app that lets you experiment with guitar chords, scales, and AI-powered suggestions—all in real time. Whether you’re a beginner learning chord shapes or an advanced guitarist exploring harmonic possibilities, this app is your virtual fretboard companion.
 
-# 🚀 Features
+## 🚀 Features
 
 Interactive Fretboard
 
@@ -42,7 +42,7 @@ Click “Get Suggestions” to receive intelligent chord/scale recommendations.
 
 Suggestions come with a title, description, and source link when available.
 
-# 🎛️ Controls
+## 🎛️ Controls
 
 Select notes by clicking on frets or open strings.
 
@@ -62,7 +62,7 @@ JavaScript – core music logic for chords, scales, and suggestions
 
 AI Backend – optional AI-driven suggestions via API
 
-# 🎯 Use Cases
+## 🎯 Use Cases
 
 Learn and explore guitar chords and scales.
 
@@ -72,7 +72,7 @@ Discover new chords and progressions with AI help.
 
 Visualize scales and chord tones across the fretboard.
 
-# 🔧 Future Improvements
+## 🔧 Future Improvements
 
 Add more tunings (Open G, DADGAD, etc.)
 
@@ -83,14 +83,14 @@ Enable drag-to-select multiple notes
 Dark mode and mobile-friendly layout
 
 📝 How to Run Locally
-# Clone the repo
+## Clone the repo
 git clone https://github.com/yourusername/guitar-chord-builder.git
 cd guitar-chord-builder
 
-# Install dependencies
+## Install dependencies
 npm install
 
-# Start the app
+## Start the app
 npm start
 
 
