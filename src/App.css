@@ -40,3 +40,33 @@
 .read-the-docs {
   color: #888;
 }
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1); /* Light background */
+  border-left-color: #09f; /* Blue part that spins */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+:root {
+  --card-bg: #f4f6ff;
+  --card-text: #111;
+  --card-border: #ccc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --card-bg: #1e1e2f;
+    --card-text: #f1f1f1;
+    --card-border: #444;
+  }
+}

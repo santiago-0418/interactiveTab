@@ -21,14 +21,32 @@ app.post("/suggest", async (req, res) => {
 
   try {
     const notesText = selectedNotes
-      .map(n => `${n.note}(fret ${n.fret})`)
+      .map(n => `${n.note} (fret ${n.fret})`)
       .join(", ")
       .slice(0, 500);
 
     const prompt = `
-      The user is exploring the ${key} key with ${scale} scale on a guitar.
-      Currently selected notes: ${notesText}.
-      Suggest educational content (tutorials, guides, websites) that help them learn about these concepts.
+You are an expert guitar tutor.
+
+The user is exploring the ${key} key with the ${scale} scale on a guitar.
+Currently selected notes: ${notesText}.
+
+Provide **at most 3 educational suggestions** that help the user learn:
+- Guitar techniques related to these notes.
+- Scales, chords, or theory concepts demonstrated by these notes.
+
+For each suggestion, include:
+1. **title** – a short descriptive title.
+2. **source** – where it comes from (website, YouTube channel, author).
+3. **link** – if applicable.
+4. **description** – 1-2 sentences explaining why it’s useful.
+
+Return the response as a **JSON array**, like this:
+
+[
+  { "title": "...", "source": "...", "link": "...", "description": "..." },
+  ...
+]
     `;
 
     const response = await ai.models.generateContent({
@@ -36,11 +54,22 @@ app.post("/suggest", async (req, res) => {
       contents: prompt
     });
 
-    res.json({ suggestions: response.text });
+    // Parse AI JSON safely
+    let suggestions = [];
+    try {
+      suggestions = JSON.parse(response.text);
+    } catch (e) {
+      console.warn("Failed to parse AI JSON:", e);
+      // fallback: return raw text
+      suggestions = [{ title: "AI Suggestion", source: "AI", link: "", description: response.text }];
+    }
+
+    res.json({ suggestions });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to get suggestions" });
   }
 });
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

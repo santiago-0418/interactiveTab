@@ -184,6 +184,8 @@ export default function App() {
   const [scaleType, setScaleType] = useState("Major");
   const [showScale, setShowScale] = useState(true);
   const [hoverSuggestion, setHoverSuggestion] = useState(null);
+  const [loading, setLoading] = useState(false);
+
 
   const scaleNotes = getScaleNotes(keyRoot, scaleType);
 
@@ -208,23 +210,26 @@ export default function App() {
   }
 
   async function getAISuggestions() {
-  const response = await fetch("http://localhost:4000/suggest", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      key: keyRoot,
-      scale: scaleType,
-      selectedNotes: selectedNotes
-    })
-  });
-  const data = await response.json();
-  setAISuggestions(data.suggestions);
+  setLoading(true); // start loading
+  try {
+    const response = await fetch("https://tab-app-backend.vercel.app/api/suggest", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        key: keyRoot,
+        scale: scaleType,
+        selectedNotes: selectedNotes
+      })
+    });
+    const data = await response.json();
+    setAISuggestions(data.suggestions);
+  } catch (err) {
+    console.error("Error fetching AI suggestions:", err);
+    setAISuggestions("Error fetching suggestions");
+  } finally {
+    setLoading(false); // stop loading
+  }
 }
-      <div>
-      <h2>AI Learning Suggestions</h2>
-      <button onClick={getAISuggestions}>Get Suggestions</button>
-      {AISuggestions && <div style={{marginTop: "10px"}}>{AISuggestions}</div>}
-    </div>
 
 
   const detectedChords = detectChords(selectedNotes.map(n => n.note));
@@ -323,12 +328,47 @@ export default function App() {
         )}
       </div>
     <div>
-        <h2>AI Learning Suggestions</h2>
-        <button onClick={getAISuggestions}>Get Suggestions</button>
-        {AISuggestions && (
-          <div style={{ marginTop: "10px" }}>{AISuggestions}</div>
-        )}
-      </div>
+  <h2>AI Learning Suggestions</h2>
+  <button 
+    onClick={getAISuggestions} 
+    disabled={loading} 
+    style={{ cursor: loading ? "not-allowed" : "pointer" }}
+  >
+    {loading ? "Thinking..." : "Get Suggestions"}
+    {loading && <span className="spinner"></span>}
+  </button>
+
+  {/* Render suggestions only if array exists and has items */}
+  {AISuggestions && AISuggestions.length > 0 && !loading && (
+    <div style={{ marginTop: "10px" }}>
+      {AISuggestions.map((s, i) => (
+        <div
+          key={i}
+          style={{
+            border: "1px solid #ccc",
+            padding: "10px",
+            borderRadius: "8px",
+            marginBottom: "10px",
+            background: "#f9f9f9",
+            color: "black" // optional: fix dark mode later
+          }}
+        >
+          <h3 style={{ margin: "0 0 5px 0" }}>{s.title}</h3>
+          <p style={{ margin: "0 0 5px 0", fontStyle: "italic" }}>Source: {s.source}</p>
+          {s.link && (
+            <a href={s.link} target="_blank" rel="noopener noreferrer">
+              {s.link}
+            </a>
+          )}
+          <p style={{ margin: "5px 0 0 0" }}>{s.description}</p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+
+
     </div>
   );
 }
